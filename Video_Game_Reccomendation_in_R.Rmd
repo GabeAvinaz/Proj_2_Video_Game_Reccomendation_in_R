@@ -1,0 +1,11 @@
+
+
+```{r}
+library(readr)
+games_df <- read_csv("data/games.csv", col_types = cols(AppID = col_character()))
+View(games_df)
+```
+```{r}
+problems(games_df)
+```
+
