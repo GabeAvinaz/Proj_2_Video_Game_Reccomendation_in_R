@@ -2,10 +2,92 @@
 
 ```{r}
 library(readr)
-games_df <- read_csv("data/games.csv", col_types = cols(AppID = col_character()))
+library(text)
+library(proxy)
+library(tm)
+library(bigmemory)
+library(recommenderlab)
+library(Matrix)
+
+```
+
+
+```{r}
+games_df <- read_csv("data/games.csv", col_types = cols(AppID = col_character(), 
+    `Score rank` = col_skip()))
+keeps <- c("AppID","Name","Release date", "Estimated owners", "About the game", "Metacritic score", "Positive", "Negative", "Recommendations", "Categories", "Genres", "Tags")
+games_df = games_df[keeps]
+games_df$Tags <- strsplit(games_df$Tags, ",\\s*")
+games_df$Genres <- strsplit(games_df$Genres, ",\\s*")
+games_df$Categories <- strsplit(games_df$Categories, ",\\s*")
+
 View(games_df)
+
 ```
 ```{r}
-problems(games_df)
+colnames(games_df)
+```
+### Content-based Reccomendation system
+```{r}
+games_df$features <- paste(games_df$`About the game`, sapply(games_df$Tags, paste, collapse = " "), sapply(games_df$Genres, paste, collapse = " "), sapply(games_df$Categories, paste, collapse = " "), sep = " ")
+```
+
+
+```{r}
+# Vectorize item features
+corpus <- Corpus(VectorSource(games_df$features))
+tdm <- TermDocumentMatrix(corpus)
+item_matrix <- as.matrix(tdm)
+```
+
+```{r}
+unique_genres <- unique(unlist(games_df$Genres))
+unique_genres
+```
+
+```{r}
+unique_tags <- unique(unlist(games_df$Tags))
+unique_tags
+```
+
+```{r}
+unique_categories <- unique(unlist(games_df$Categories))
+unique_categories
+```
+
+```{r}
+
+# Create an empty sparse matrix to store the item features
+item_matrix <- sparseMatrix(
+  i = integer(),
+  j = integer(),
+  x = numeric(),
+  dims = c(length(games_df$Name), length(unique_genres) + length(unique_tags) + length(unique_categories)),
+  dimnames = list(games_df$Name, c(unique_genres, unique_tags, unique_categories))
+)
+
+```
+
+
+```{r}
+# Populate the sparse matrix with item features
+for (i in 1:length(games_df$Name)) {
+  genre_indices <- which(unique_genres %in% unlist(games_df$Genres[i]))
+  tag_indices <- which(unique_tags %in% unlist(games_df$Tags[i]))
+  category_indicies <- which(unique_categories %in% unlist(games_df$Categories[i]))
+  item_matrix[i, genre_indices] <- 1
+  item_matrix[i, length(unique_genres) + tag_indices] <- 1
+  item_matrix[i, length(unique_genres) + length(unique_tags) + category_indicies] <- 1
+
+}
+```
+
+```{r}
+# Compute item similarity using cosine similarity on sparse matrix
+similarity_matrix <- proxy::cosine(as(item_matrix, "CsparseMatrix"))
+
+# Convert similarity matrix to a regular matrix
+similarity_matrix <- as(similarity_matrix, "matrix")
+
 ```
 
