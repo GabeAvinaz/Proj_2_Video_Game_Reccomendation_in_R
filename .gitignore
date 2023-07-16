@@ -199,3 +199,8 @@ data/game_reviews/1307550_Craftopia.csv
 data/.DS_Store
 .DS_Store
 .DS_Store
+cosine_similarities_CV.npy
+euclidean_similarities_CV.npy
+euclidean_similarities_TFIDF.npy
+user_similarities.npy
+cosine_similarities_TFIDF.npy
