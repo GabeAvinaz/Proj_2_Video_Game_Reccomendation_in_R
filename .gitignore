@@ -204,3 +204,4 @@ euclidean_similarities_CV.npy
 euclidean_similarities_TFIDF.npy
 user_similarities.npy
 cosine_similarities_TFIDF.npy
+item_similarities.npy
